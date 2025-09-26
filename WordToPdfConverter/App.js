@@ -1,4 +1,3 @@
-// App.js
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
