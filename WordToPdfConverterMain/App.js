@@ -84,26 +84,73 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 40, backgroundColor: '#F5F5F5' },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 22, fontWeight: 'bold', marginLeft: 10, color: '#333' },
+  container: { 
+    flex: 1,
+    padding: 20,
+    paddingTop: 40, 
+    backgroundColor: '#F5F5F5' 
+  },
+  header: { 
+    flexDirection: 'row',
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  title: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    marginLeft: 10, 
+    color: '#333' 
+  },
   uploadButton: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#4CAF50', padding: 12, borderRadius: 8,
-    justifyContent: 'center', marginBottom: 15,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#4CAF50', 
+    padding: 12, 
+    borderRadius: 8,
+    justifyContent: 'center', 
+    marginBottom: 15,
   },
-  uploadText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
-  noFiles: { textAlign: 'center', marginTop: 30, color: '#888', fontStyle: 'italic' },
+  uploadText: { 
+    color: 'white', 
+    fontWeight: 'bold', 
+    marginLeft: 8, 
+    fontSize: 16 
+  },
+  noFiles: { 
+    textAlign: 'center',
+    marginTop: 30, 
+    color: '#888',
+    fontStyle: 'italic'
+   },
   fileContainer: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 10, marginVertical: 6,
-    borderRadius: 8, elevation: 1,
+    flexDirection: 'row',
+    alignItems: 'center', 
+    backgroundColor: 'white',
+    padding: 10, 
+    marginVertical: 6,
+    borderRadius: 8,
+    elevation: 1,
   },
-  fileName: { flex: 1, marginLeft: 10, fontSize: 16, color: '#444' },
+  fileName: { 
+    flex: 1, 
+    marginLeft: 10, fontSize: 16, 
+    color: '#444'
+   },
   convertButton: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#E91E63', padding: 8, borderRadius: 6,
+    flexDirection: 'row', 
+    alignItems: 'center',
+    backgroundColor: '#E91E63',
+    padding: 8, 
+    borderRadius: 6,
     marginRight: 10,
   },
-  convertText: { color: 'white', marginLeft: 6, fontWeight: '600' },
+  convertText: { 
+    color: 'white', 
+    marginLeft: 6, 
+    fontWeight: '600' },
   deleteButton: {
-    backgroundColor: '#F44336', padding: 8, borderRadius: 6,
+    backgroundColor: '#F44336',
+    padding: 8,
+    borderRadius: 6,
   },
 });
