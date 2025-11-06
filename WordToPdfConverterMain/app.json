@@ -1,5 +1,6 @@
 {
   "expo": {
+    "sdkVersion": "54.0.0",
     "name": "WordToPdfConverterMain",
     "slug": "WordToPdfConverterMain",
     "version": "1.0.0",

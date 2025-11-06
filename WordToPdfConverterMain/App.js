@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Button, FlatList, TouchableOpacity, Alert, StyleSheet, ToastAndroid } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, ToastAndroid, Platform, PermissionsAndroid } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+// ✅ Use the legacy import for compatibility
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Print from 'expo-print';
+import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function App() {
@@ -8,31 +12,302 @@ export default function App() {
 
   const pickWordFiles = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        multiple: true,
-      });
+      const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+  // Document picker result handled below
 
-      if (result.type === 'success') {
-        if (!files.find(f => f.uri === result.uri)) {
-          setFiles((prevFiles) => [...prevFiles, result]);
-          ToastAndroid.show(`${result.name} selected`, ToastAndroid.SHORT);
-        } else {
-          ToastAndroid.show('File already selected', ToastAndroid.SHORT);
-        }
+      if (result.canceled === true || result.type === 'cancel') {
+        if (Platform.OS === 'android') ToastAndroid.show('File selection cancelled', ToastAndroid.SHORT);
+        else Alert.alert('Cancelled', 'File selection was cancelled');
+        return;
+      }
+
+      let fileObj = null;
+      if (Array.isArray(result.assets) && result.assets.length > 0) {
+        const a = result.assets[0];
+        fileObj = { uri: a.uri, name: a.name || a.fileName || (a.uri && a.uri.split('/').pop()), size: a.size };
+      } else if (result.type === 'success' || result.uri) {
+        const uri = result.uri;
+        const name = result.name || (uri && uri.split('/').pop());
+        fileObj = { uri, name };
+      }
+
+      if (!fileObj) {
+        Alert.alert('Pick error', 'Could not interpret the picked file.');
+        return;
+      }
+
+      const name = fileObj.name || '';
+      const ext = name.split('.').pop()?.toLowerCase() || '';
+      const allowed = ['doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'mp4'];
+
+      if (!allowed.includes(ext)) {
+        if (Platform.OS === 'android') ToastAndroid.show('Please select a supported file (.doc/.docx/.pdf/.jpg/.png/.mp4)', ToastAndroid.LONG);
+        else Alert.alert('Invalid file', 'Please select a supported file (.doc/.docx/.pdf/.jpg/.png/.mp4)');
+        return;
+      }
+
+      if (!files.find(f => f.uri === fileObj.uri)) {
+        setFiles((prevFiles) => [...prevFiles, fileObj]);
+        if (Platform.OS === 'android') ToastAndroid.show(`${fileObj.name} selected`, ToastAndroid.SHORT);
+        else Alert.alert('File selected', fileObj.name);
+      } else {
+        if (Platform.OS === 'android') ToastAndroid.show('File already selected', ToastAndroid.SHORT);
+        else Alert.alert('Info', 'File already selected');
       }
     } catch (error) {
-      Alert.alert('Error', 'File picking failed: ' + error.message);
+      Alert.alert('Error', 'File picking failed: ' + (error?.message || error));
+    }
+  };
+
+  const pickFromGallery = async () => {
+    try {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        if (Platform.OS === 'android') ToastAndroid.show(`Gallery permission: ${status}`, ToastAndroid.LONG);
+        else Alert.alert('Permission required', `Permission to access the gallery is required (status=${status}).`);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        allowsEditing: false,
+        selectionLimit: 1,
+        includeBase64: true,
+      });
+      if (result.canceled || result.cancelled) {
+        // If the gallery picker was cancelled (Drive opened or user didn't confirm),
+        // open the system file picker for images as a fallback (usually shows Downloads).
+        if (Platform.OS === 'android') ToastAndroid.show('Gallery cancelled — opening Files picker as fallback', ToastAndroid.SHORT);
+        else Alert.alert('Cancelled', 'Gallery selection was cancelled — opening Files picker as fallback');
+
+        try {
+          const doc = await DocumentPicker.getDocumentAsync({ type: 'image/*' });
+          if (doc.type === 'success') {
+            const uri = doc.uri;
+            const name = doc.name || (uri && uri.split('/').pop());
+            const fileObj = { uri, name };
+            if (!files.find(f => f.uri === uri)) setFiles(prev => [...prev, fileObj]);
+            return;
+          } else {
+            return;
+          }
+        } catch (e) {
+          return;
+        }
+      }
+
+  const asset = result.assets ? result.assets[0] : result;
+  const uri = asset.uri;
+  const name = asset.fileName || uri.split('/').pop();
+  const base64 = asset.base64;
+
+  const fileObj = { uri, name, base64 };
+      if (!files.find(f => f.uri === uri)) {
+        setFiles(prev => [...prev, fileObj]);
+        if (Platform.OS === 'android') ToastAndroid.show(`${name} selected from gallery`, ToastAndroid.SHORT);
+        else Alert.alert('File selected', name);
+      } else {
+        if (Platform.OS === 'android') ToastAndroid.show('File already selected', ToastAndroid.SHORT);
+        else Alert.alert('Info', 'File already selected');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Gallery pick failed: ' + (err?.message || err));
+    }
+  };
+
+  const pickFromCamera = async () => {
+    try {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        if (Platform.OS === 'android') ToastAndroid.show(`Camera permission: ${status}`, ToastAndroid.LONG);
+        else Alert.alert('Permission required', `Permission to access the camera is required (status=${status}).`);
+        return;
+      }
+
+      // ✅ Updated: replace deprecated MediaTypeOptions
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        base64: true,
+      });
+
+  if (result.canceled || result.cancelled) {
+        // If camera was cancelled, offer to open file picker as fallback
+        if (Platform.OS === 'android') ToastAndroid.show('Camera cancelled — opening Files picker as fallback', ToastAndroid.SHORT);
+        else Alert.alert('Cancelled', 'Camera action was cancelled — opening Files picker as fallback');
+        try {
+          const doc = await DocumentPicker.getDocumentAsync({ type: 'image/*' });
+          if (doc.type === 'success') {
+            const uri = doc.uri;
+            const name = doc.name || (uri && uri.split('/').pop());
+            const fileObj = { uri, name };
+            if (!files.find(f => f.uri === uri)) setFiles(prev => [...prev, fileObj]);
+            return;
+          } else {
+            return;
+          }
+        } catch (e) {
+          return;
+        }
+      }
+
+  const asset = result.assets ? result.assets[0] : result;
+  const uri = asset.uri;
+  const name = asset.fileName || uri.split('/').pop();
+  const base64 = asset.base64;
+
+  const fileObj = { uri, name, base64 };
+      if (!files.find(f => f.uri === uri)) {
+        setFiles(prev => [...prev, fileObj]);
+        if (Platform.OS === 'android') ToastAndroid.show(`${name} captured`, ToastAndroid.SHORT);
+        else Alert.alert('File selected', name);
+      } else {
+        if (Platform.OS === 'android') ToastAndroid.show('File already selected', ToastAndroid.SHORT);
+        else Alert.alert('Info', 'File already selected');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Camera failed: ' + (err?.message || err));
     }
   };
 
   const convertToPDF = (file) => {
-    ToastAndroid.show(`Converting ${file.name} to PDF...`, ToastAndroid.SHORT);
+    const uriToBase64 = async (uri) => {
+      try {
+        const data = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        if (data && data.length > 0) return data;
+      } catch (e) {}
 
-    setTimeout(() => {
-      ToastAndroid.show(`${file.name} converted successfully!`, ToastAndroid.LONG);
-      setFiles((prev) => prev.filter((f) => f.uri !== file.uri));
-    }, 2000);
+      try {
+        // Fallback: copy the file into the app cache and read from there.
+        const parts = uri.split('.');
+        const ext = parts.length > 1 ? parts.pop() : 'tmp';
+        const tmpPath = FileSystem.cacheDirectory + `tmp-${Date.now()}.${ext}`;
+        await FileSystem.copyAsync({ from: uri, to: tmpPath });
+        const data = await FileSystem.readAsStringAsync(tmpPath, { encoding: FileSystem.EncodingType.Base64 });
+        if (data && data.length > 0) return data;
+        throw new Error('Fallback read produced empty data');
+      } catch (e) {
+        throw new Error('Unable to read file data for conversion: ' + (e?.message || e));
+      }
+    };
+
+    const doConvert = async () => {
+      try {
+        const name = file.name || 'file';
+        const ext = name.split('.').pop()?.toLowerCase() || '';
+        const baseName = name.replace(/\.[^/.]+$/, '');
+
+        // shared save function used by images and video thumbnails
+        const saveToDownloads = async (srcPath, filename) => {
+          // On Android 11+ (API 30+) scoped storage prevents apps from freely
+          // writing to /storage/emulated/0/Download without special permissions
+          // (MANAGE_EXTERNAL_STORAGE) or using the Storage Access Framework.
+          // Expo Go / managed apps should avoid requesting MANAGE_EXTERNAL_STORAGE.
+          // So only attempt direct copy for older Android versions (< API 30).
+          if (Platform.OS === 'android' && Platform.Version < 30) {
+            try {
+              const perm = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+              if (perm === PermissionsAndroid.RESULTS.GRANTED) {
+                const toPath = `/storage/emulated/0/Download/${filename}`;
+                await FileSystem.copyAsync({ from: srcPath, to: toPath });
+                ToastAndroid.show(`Saved to Downloads: ${toPath}`, ToastAndroid.LONG);
+                return true;
+              }
+            } catch (e) {
+              console.log('saveToDownloads: error copying to Downloads', e);
+            }
+          } else if (Platform.OS === 'android') {
+            // Android 11+ (including Android 15) — skip direct copy and fall back
+            // to share/media-library so user can explicitly pick a location.
+            console.log('Skipping direct copy to Downloads on Android API >= 30; using share/media-library fallback');
+          }
+
+          // Fallback 1: try to open share dialog so user can save to Files/Drive
+          try {
+            const Sharing = await import('expo-sharing');
+            if (Sharing && Sharing.shareAsync) {
+              await Sharing.shareAsync(srcPath);
+              return true;
+            }
+          } catch (e) {
+            // dynamic share not available
+          }
+
+          // Fallback 2: try to save to media library (may work on some Android/iOS versions)
+          try {
+            const MediaLibrary = await import('expo-media-library');
+            if (MediaLibrary && MediaLibrary.createAssetAsync) {
+              // request permissions first
+              try {
+                const { status } = await MediaLibrary.requestPermissionsAsync();
+                if (status === 'granted') {
+                  const asset = await MediaLibrary.createAssetAsync(srcPath);
+                  ToastAndroid.show?.(`Saved to library: ${asset.uri}`) || console.log('Saved to library', asset.uri);
+                  return true;
+                }
+              } catch (e) {
+                console.log('media-library: permission/create failed', e);
+              }
+            }
+          } catch (e) {
+            // media-library fallback failed
+          }
+
+          // All fallbacks failed
+          return false;
+        };
+
+        if (['jpg', 'jpeg', 'png'].includes(ext)) {
+          let base64 = file.base64 || await uriToBase64(file.uri);
+          const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+          const html = `<!DOCTYPE html><html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
+          const { uri: pdfUri } = await Print.printToFileAsync({ html });
+          const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
+          await FileSystem.moveAsync({ from: pdfUri, to: dest }); // ✅ works via legacy import
+
+          const saved = await saveToDownloads(dest, `${baseName}.pdf`);
+          if (saved) {
+            if (Platform.OS !== 'android') Alert.alert('Converted', `${file.name} converted to PDF and available to share/save.`);
+          } else {
+            Alert.alert('Converted', `${file.name} converted to PDF at ${dest}`);
+          }
+        } else if (ext === 'pdf') {
+          const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
+          await FileSystem.copyAsync({ from: file.uri, to: dest });
+          Alert.alert('Saved', `${file.name} saved to ${dest}`);
+        } else if (ext === 'mp4') {
+          // Video: extract a thumbnail and convert that image to PDF
+          try {
+            const VideoThumbnails = await import('expo-video-thumbnails');
+            const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(file.uri, { time: 1000 });
+            const base64 = await uriToBase64(thumbUri);
+            const mime = 'image/jpeg';
+            const html = `<!DOCTYPE html><html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
+            const { uri: pdfUri } = await Print.printToFileAsync({ html });
+            const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
+            await FileSystem.moveAsync({ from: pdfUri, to: dest });
+
+            const savedVideoPdf = await saveToDownloads(dest, `${baseName}.pdf`);
+            if (savedVideoPdf) {
+              if (Platform.OS !== 'android') Alert.alert('Converted', `${file.name} converted to PDF and available to share/save.`);
+            } else {
+              Alert.alert('Converted', `${file.name} converted to PDF at ${dest}`);
+            }
+          } catch (e) {
+            Alert.alert('Conversion error', 'Video -> thumbnail conversion failed: ' + (e?.message || e));
+          }
+        } else if (['doc', 'docx'].includes(ext)) {
+          Alert.alert('Not supported', 'Converting .doc/.docx to PDF is not supported in Expo Go.');
+        }
+
+        setFiles((prev) => prev.filter((f) => f.uri !== file.uri));
+      } catch (err) {
+        Alert.alert('Conversion error', err?.message || String(err));
+      }
+    };
+
+    doConvert();
   };
 
   const confirmDelete = (file) => {
@@ -42,8 +317,7 @@ export default function App() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', onPress: () => setFiles(prev => prev.filter(f => f.uri !== file.uri)) },
-      ],
-      { cancelable: true }
+      ]
     );
   };
 
@@ -53,9 +327,20 @@ export default function App() {
         <MaterialIcons name="description" size={36} color="#4CAF50" />
         <Text style={styles.title}>Word to PDF Converter</Text>
       </View>
+
       <TouchableOpacity style={styles.uploadButton} onPress={pickWordFiles}>
         <MaterialIcons name="file-upload" size={24} color="white" />
         <Text style={styles.uploadText}>Select Word Files</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.uploadButton, styles.galleryButton]} onPress={pickFromGallery}>
+        <MaterialIcons name="photo-library" size={24} color="white" />
+        <Text style={styles.uploadText}>Select From Gallery</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.uploadButton, styles.cameraButton]} onPress={pickFromCamera}>
+        <MaterialIcons name="photo-camera" size={24} color="white" />
+        <Text style={styles.uploadText}>Take Photo</Text>
       </TouchableOpacity>
 
       {files.length === 0 && <Text style={styles.noFiles}>No files selected yet</Text>}
@@ -79,74 +364,25 @@ export default function App() {
           </View>
         )}
       />
+
+      {/* debug panel removed */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1,
-    padding: 20,
-    paddingTop: 40,
-    backgroundColor: '#F5F5F5' },
-  header: { 
-    flexDirection: 'row',
-     alignItems: 'center', 
-     marginBottom: 20 },
-  title: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    marginLeft: 10, 
-    color: '#333' },
-  uploadButton: {
-    flexDirection: 'row', 
-    alignItems: 'center',
-     backgroundColor: '#4CAF50',
-      padding: 12, 
-      borderRadius: 8,
-    justifyContent: 'center', 
-    marginBottom: 15,
-  },
-  uploadText: { 
-    color: 'white', 
-    fontWeight: 'bold',
-    marginLeft: 8, 
-    fontSize: 16 },
-  noFiles: { 
-    textAlign: 'center',
-    marginTop: 30,
-    color: '#888', 
-    fontStyle: 'italic' },
-  fileContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: 'white', 
-    padding: 10, 
-    marginVertical: 6,
-    borderRadius: 8,
-    elevation: 1,
-  },
-  fileName: { 
-    flex: 1,
-     marginLeft: 10,
-    fontSize: 16, 
-    color: '#444' },
-  convertButton: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#E91E63', 
-    padding: 8, 
-    borderRadius: 6,
-    marginRight: 10,
-  },
-  convertText: { 
-    color: 'white', 
-    marginLeft: 6, 
-    fontWeight: '600' 
-  },
-  deleteButton: {
-    backgroundColor: '#F44336',
-    padding: 8, 
-    borderRadius: 6,
-  },
+  container: { flex: 1, padding: 20, paddingTop: 40, backgroundColor: '#F5F5F5' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', marginLeft: 10, color: '#333' },
+  uploadButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4CAF50', padding: 12, borderRadius: 8, justifyContent: 'center', marginBottom: 15 },
+  uploadText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
+  noFiles: { textAlign: 'center', marginTop: 30, color: '#888', fontStyle: 'italic' },
+  fileContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 10, marginVertical: 6, borderRadius: 8, elevation: 1 },
+  fileName: { flex: 1, marginLeft: 10, fontSize: 16, color: '#444' },
+  convertButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E91E63', padding: 8, borderRadius: 6, marginRight: 10 },
+  convertText: { color: 'white', marginLeft: 6, fontWeight: '600' },
+  deleteButton: { backgroundColor: '#F44336', padding: 8, borderRadius: 6 },
+  // debug styles removed
+  galleryButton: { marginTop: 10, backgroundColor: '#1976D2' },
+  cameraButton: { marginTop: 10, backgroundColor: '#009688' }
 });
