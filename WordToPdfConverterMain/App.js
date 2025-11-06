@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, ToastAndroid, Platform, PermissionsAndroid } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-// ✅ Use the legacy import for compatibility
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,7 +12,6 @@ export default function App() {
   const pickWordFiles = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-  // Document picker result handled below
 
       if (result.canceled === true || result.type === 'cancel') {
         if (Platform.OS === 'android') ToastAndroid.show('File selection cancelled', ToastAndroid.SHORT);
@@ -125,7 +123,6 @@ export default function App() {
         return;
       }
 
-      // ✅ Updated: replace deprecated MediaTypeOptions
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
@@ -200,11 +197,6 @@ export default function App() {
 
         // shared save function used by images and video thumbnails
         const saveToDownloads = async (srcPath, filename) => {
-          // On Android 11+ (API 30+) scoped storage prevents apps from freely
-          // writing to /storage/emulated/0/Download without special permissions
-          // (MANAGE_EXTERNAL_STORAGE) or using the Storage Access Framework.
-          // Expo Go / managed apps should avoid requesting MANAGE_EXTERNAL_STORAGE.
-          // So only attempt direct copy for older Android versions (< API 30).
           if (Platform.OS === 'android' && Platform.Version < 30) {
             try {
               const perm = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
@@ -218,8 +210,6 @@ export default function App() {
               console.log('saveToDownloads: error copying to Downloads', e);
             }
           } else if (Platform.OS === 'android') {
-            // Android 11+ (including Android 15) — skip direct copy and fall back
-            // to share/media-library so user can explicitly pick a location.
             console.log('Skipping direct copy to Downloads on Android API >= 30; using share/media-library fallback');
           }
 
@@ -264,7 +254,7 @@ export default function App() {
           const html = `<!DOCTYPE html><html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
           const { uri: pdfUri } = await Print.printToFileAsync({ html });
           const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
-          await FileSystem.moveAsync({ from: pdfUri, to: dest }); // ✅ works via legacy import
+          await FileSystem.moveAsync({ from: pdfUri, to: dest });
 
           const saved = await saveToDownloads(dest, `${baseName}.pdf`);
           if (saved) {
@@ -365,7 +355,7 @@ export default function App() {
         )}
       />
 
-      {/* debug panel removed */}
+
     </View>
   );
 }
@@ -382,7 +372,7 @@ const styles = StyleSheet.create({
   convertButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E91E63', padding: 8, borderRadius: 6, marginRight: 10 },
   convertText: { color: 'white', marginLeft: 6, fontWeight: '600' },
   deleteButton: { backgroundColor: '#F44336', padding: 8, borderRadius: 6 },
-  // debug styles removed
+
   galleryButton: { marginTop: 10, backgroundColor: '#1976D2' },
   cameraButton: { marginTop: 10, backgroundColor: '#009688' }
 });
