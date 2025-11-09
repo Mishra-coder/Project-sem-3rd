@@ -5,9 +5,12 @@ const mammoth = require('mammoth');
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +50,14 @@ app.post('/convert', upload.single('file'), async (req, res) => {
   const outputPath = path.join(__dirname, 'uploads', path.parse(req.file.filename).name + '.pdf');
 
   try {
+    // Create conversion record in database
+    const conversion = await prisma.conversion.create({
+      data: {
+        filename: req.file.originalname,
+        originalSize: req.file.size,
+        status: 'processing'
+      }
+    });
 
     const result = await mammoth.extractRawText({ path: inputPath });
     const text = result.value;
@@ -57,21 +68,43 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     doc.fontSize(12).text(text, 50, 50);
     doc.end();
 
-    writeStream.on('finish', () => {
+    writeStream.on('finish', async () => {
+      try {
+        const stats = fs.statSync(outputPath);
+        // Update conversion record with success
+        await prisma.conversion.update({
+          where: { id: conversion.id },
+          data: {
+            status: 'completed',
+            convertedSize: stats.size,
+            completedAt: new Date()
+          }
+        });
 
-      res.download(outputPath, path.parse(req.file.filename).name + '.pdf', (err) => {
-        if (err) {
-          console.error('Download error:', err);
-        }
-        setTimeout(() => {
-          fs.unlink(inputPath, () => {});
-          fs.unlink(outputPath, () => {});
-        }, 10000); 
-      });
+        res.download(outputPath, path.parse(req.file.filename).name + '.pdf', (err) => {
+          if (err) {
+            console.error('Download error:', err);
+          }
+          setTimeout(() => {
+            fs.unlink(inputPath, () => {});
+            fs.unlink(outputPath, () => {});
+          }, 10000);
+        });
+      } catch (dbError) {
+        console.error('Database update error:', dbError);
+        res.status(500).json({ error: 'Conversion completed but database update failed' });
+      }
     });
 
-    writeStream.on('error', (err) => {
+    writeStream.on('error', async (err) => {
       console.error('Write stream error:', err);
+      // Update conversion record with failure
+      await prisma.conversion.update({
+        where: { id: conversion.id },
+        data: {
+          status: 'failed'
+        }
+      });
       res.status(500).json({ error: 'PDF creation failed' });
     });
 
@@ -85,11 +118,30 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });
 });
 
+app.get('/conversions', async (req, res) => {
+  try {
+    const conversions = await prisma.conversion.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+    res.json(conversions);
+  } catch (err) {
+    console.error('Database query error:', err);
+    res.status(500).json({ error: 'Failed to fetch conversions' });
+  }
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: err.message });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  try {
+    await prisma.$connect();
+    console.log('Database connected successfully');
+  } catch (err) {
+    console.error('Database connection failed:', err);
+  }
 });
