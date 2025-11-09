@@ -5,9 +5,11 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Sharing from 'expo-sharing';
 
 export default function App() {
   const [files, setFiles] = useState([]);
+  const BACKEND_URL = 'http://localhost:3003';
 
   const pickWordFiles = async () => {
     try {
@@ -59,7 +61,7 @@ export default function App() {
 
   const pickFromGallery = async () => {
     try {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         if (Platform.OS === 'android') ToastAndroid.show(`Gallery permission: ${status}`, ToastAndroid.LONG);
         else Alert.alert('Permission required', `Permission to access the gallery is required (status=${status}).`);
@@ -74,8 +76,6 @@ export default function App() {
         includeBase64: true,
       });
       if (result.canceled || result.cancelled) {
-        // If the gallery picker was cancelled (Drive opened or user didn't confirm),
-        // open the system file picker for images as a fallback (usually shows Downloads).
         if (Platform.OS === 'android') ToastAndroid.show('Gallery cancelled — opening Files picker as fallback', ToastAndroid.SHORT);
         else Alert.alert('Cancelled', 'Gallery selection was cancelled — opening Files picker as fallback');
 
@@ -95,12 +95,12 @@ export default function App() {
         }
       }
 
-  const asset = result.assets ? result.assets[0] : result;
-  const uri = asset.uri;
-  const name = asset.fileName || uri.split('/').pop();
-  const base64 = asset.base64;
+      const asset = result.assets ? result.assets[0] : result;
+      const uri = asset.uri;
+      const name = asset.fileName || uri.split('/').pop();
+      const base64 = asset.base64;
 
-  const fileObj = { uri, name, base64 };
+      const fileObj = { uri, name, base64 };
       if (!files.find(f => f.uri === uri)) {
         setFiles(prev => [...prev, fileObj]);
         if (Platform.OS === 'android') ToastAndroid.show(`${name} selected from gallery`, ToastAndroid.SHORT);
@@ -116,7 +116,7 @@ export default function App() {
 
   const pickFromCamera = async () => {
     try {
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         if (Platform.OS === 'android') ToastAndroid.show(`Camera permission: ${status}`, ToastAndroid.LONG);
         else Alert.alert('Permission required', `Permission to access the camera is required (status=${status}).`);
@@ -129,8 +129,7 @@ export default function App() {
         base64: true,
       });
 
-  if (result.canceled || result.cancelled) {
-        // If camera was cancelled, offer to open file picker as fallback
+      if (result.canceled || result.cancelled) {
         if (Platform.OS === 'android') ToastAndroid.show('Camera cancelled — opening Files picker as fallback', ToastAndroid.SHORT);
         else Alert.alert('Cancelled', 'Camera action was cancelled — opening Files picker as fallback');
         try {
@@ -149,12 +148,12 @@ export default function App() {
         }
       }
 
-  const asset = result.assets ? result.assets[0] : result;
-  const uri = asset.uri;
-  const name = asset.fileName || uri.split('/').pop();
-  const base64 = asset.base64;
+      const asset = result.assets ? result.assets[0] : result;
+      const uri = asset.uri;
+      const name = asset.fileName || uri.split('/').pop();
+      const base64 = asset.base64;
 
-  const fileObj = { uri, name, base64 };
+      const fileObj = { uri, name, base64 };
       if (!files.find(f => f.uri === uri)) {
         setFiles(prev => [...prev, fileObj]);
         if (Platform.OS === 'android') ToastAndroid.show(`${name} captured`, ToastAndroid.SHORT);
@@ -176,7 +175,6 @@ export default function App() {
       } catch (e) {}
 
       try {
-        // Fallback: copy the file into the app cache and read from there.
         const parts = uri.split('.');
         const ext = parts.length > 1 ? parts.pop() : 'tmp';
         const tmpPath = FileSystem.cacheDirectory + `tmp-${Date.now()}.${ext}`;
@@ -195,7 +193,6 @@ export default function App() {
         const ext = name.split('.').pop()?.toLowerCase() || '';
         const baseName = name.replace(/\.[^/.]+$/, '');
 
-        // shared save function used by images and video thumbnails
         const saveToDownloads = async (srcPath, filename) => {
           if (Platform.OS === 'android' && Platform.Version < 30) {
             try {
@@ -213,7 +210,6 @@ export default function App() {
             console.log('Skipping direct copy to Downloads on Android API >= 30; using share/media-library fallback');
           }
 
-          // Fallback 1: try to open share dialog so user can save to Files/Drive
           try {
             const Sharing = await import('expo-sharing');
             if (Sharing && Sharing.shareAsync) {
@@ -221,14 +217,12 @@ export default function App() {
               return true;
             }
           } catch (e) {
-            // dynamic share not available
+            console.log('Sharing not available');
           }
 
-          // Fallback 2: try to save to media library (may work on some Android/iOS versions)
           try {
             const MediaLibrary = await import('expo-media-library');
             if (MediaLibrary && MediaLibrary.createAssetAsync) {
-              // request permissions first
               try {
                 const { status } = await MediaLibrary.requestPermissionsAsync();
                 if (status === 'granted') {
@@ -241,17 +235,16 @@ export default function App() {
               }
             }
           } catch (e) {
-            // media-library fallback failed
+            console.log('MediaLibrary fallback failed');
           }
 
-          // All fallbacks failed
           return false;
         };
 
         if (['jpg', 'jpeg', 'png'].includes(ext)) {
           let base64 = file.base64 || await uriToBase64(file.uri);
           const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
-          const html = `<!DOCTYPE html><html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
+          const html = `<!DOCTYPE html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
           const { uri: pdfUri } = await Print.printToFileAsync({ html });
           const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
           await FileSystem.moveAsync({ from: pdfUri, to: dest });
@@ -267,13 +260,12 @@ export default function App() {
           await FileSystem.copyAsync({ from: file.uri, to: dest });
           Alert.alert('Saved', `${file.name} saved to ${dest}`);
         } else if (ext === 'mp4') {
-          // Video: extract a thumbnail and convert that image to PDF
           try {
             const VideoThumbnails = await import('expo-video-thumbnails');
             const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(file.uri, { time: 1000 });
             const base64 = await uriToBase64(thumbUri);
             const mime = 'image/jpeg';
-            const html = `<!DOCTYPE html><html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
+            const html = `<!DOCTYPE html><body style=\"margin:0;padding:0;\"><img src=\"data:${mime};base64,${base64}\" style=\"width:100%;height:auto;\"/></body></html>`;
             const { uri: pdfUri } = await Print.printToFileAsync({ html });
             const dest = FileSystem.documentDirectory + `${baseName}.pdf`;
             await FileSystem.moveAsync({ from: pdfUri, to: dest });
@@ -288,7 +280,45 @@ export default function App() {
             Alert.alert('Conversion error', 'Video -> thumbnail conversion failed: ' + (e?.message || e));
           }
         } else if (['doc', 'docx'].includes(ext)) {
-          Alert.alert('Not supported', 'Converting .doc/.docx to PDF is not supported in Expo Go.');
+          try {
+            const formData = new FormData();
+            formData.append('file', {
+              uri: file.uri,
+              name: file.name,
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            });
+
+            const response = await fetch(`${BACKEND_URL}/convert`, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error('Conversion failed');
+            }
+
+            const blob = await response.blob();
+            const pdfUri = FileSystem.documentDirectory + `${baseName}.pdf`;
+            const reader = new FileReader();
+            reader.onload = async () => {
+              const base64 = reader.result.split(',')[1];
+              await FileSystem.writeAsStringAsync(pdfUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+
+              if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(pdfUri);
+              } else {
+                Alert.alert('Converted', `PDF saved to ${pdfUri}`);
+              }
+            };
+            reader.readAsDataURL(blob);
+
+            Alert.alert('Converted', `${file.name} converted to PDF successfully.`);
+          } catch (err) {
+            Alert.alert('Conversion error', 'Failed to convert Word file: ' + (err?.message || err));
+          }
         }
 
         setFiles((prev) => prev.filter((f) => f.uri !== file.uri));
@@ -354,8 +384,6 @@ export default function App() {
           </View>
         )}
       />
-
-
     </View>
   );
 }
@@ -372,7 +400,6 @@ const styles = StyleSheet.create({
   convertButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E91E63', padding: 8, borderRadius: 6, marginRight: 10 },
   convertText: { color: 'white', marginLeft: 6, fontWeight: '600' },
   deleteButton: { backgroundColor: '#F44336', padding: 8, borderRadius: 6 },
-
-  galleryButton: { marginTop: 10, backgroundColor: '#1976D2' },
-  cameraButton: { marginTop: 10, backgroundColor: '#009688' }
+  galleryButton: { backgroundColor: '#1976D2' },
+  cameraButton: { backgroundColor: '#009688' }
 });
