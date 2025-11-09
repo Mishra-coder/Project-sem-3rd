@@ -50,7 +50,6 @@ app.post('/convert', upload.single('file'), async (req, res) => {
   const outputPath = path.join(__dirname, 'uploads', path.parse(req.file.filename).name + '.pdf');
 
   try {
-    // Create conversion record in database
     const conversion = await prisma.conversion.create({
       data: {
         filename: req.file.originalname,
@@ -71,7 +70,6 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     writeStream.on('finish', async () => {
       try {
         const stats = fs.statSync(outputPath);
-        // Update conversion record with success
         await prisma.conversion.update({
           where: { id: conversion.id },
           data: {
@@ -98,7 +96,7 @@ app.post('/convert', upload.single('file'), async (req, res) => {
 
     writeStream.on('error', async (err) => {
       console.error('Write stream error:', err);
-      // Update conversion record with failure
+
       await prisma.conversion.update({
         where: { id: conversion.id },
         data: {
