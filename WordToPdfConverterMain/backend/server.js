@@ -9,11 +9,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
@@ -37,10 +35,9 @@ const upload = multer({
       cb(new Error('Only .doc and .docx files are allowed'));
     }
   },
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 } 
 });
 
-// Convert endpoint
 app.post('/convert', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -50,11 +47,9 @@ app.post('/convert', upload.single('file'), async (req, res) => {
   const outputPath = path.join(__dirname, 'uploads', path.parse(req.file.filename).name + '.pdf');
 
   try {
-    // Extract text from Word document
+
     const result = await mammoth.extractRawText({ path: inputPath });
     const text = result.value;
-
-    // Create PDF from text
     const doc = new PDFDocument();
     const writeStream = fs.createWriteStream(outputPath);
 
@@ -63,17 +58,15 @@ app.post('/convert', upload.single('file'), async (req, res) => {
     doc.end();
 
     writeStream.on('finish', () => {
-      // Send the PDF file
+
       res.download(outputPath, path.parse(req.file.filename).name + '.pdf', (err) => {
         if (err) {
           console.error('Download error:', err);
         }
-
-        // Clean up files after download
         setTimeout(() => {
           fs.unlink(inputPath, () => {});
           fs.unlink(outputPath, () => {});
-        }, 10000); // Delete after 10 seconds
+        }, 10000); 
       });
     });
 
@@ -88,12 +81,10 @@ app.post('/convert', upload.single('file'), async (req, res) => {
   }
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: err.message });
