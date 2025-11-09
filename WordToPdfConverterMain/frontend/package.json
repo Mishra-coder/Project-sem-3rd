@@ -2,6 +2,7 @@
   "name": "wordtopdfconverter",
   "version": "1.0.0",
   "main": "index.js",
+  "repository": "https://github.com/Mishra-coder/Project-sem-3rd",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

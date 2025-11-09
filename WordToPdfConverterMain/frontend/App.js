@@ -9,7 +9,7 @@ import * as Sharing from 'expo-sharing';
 
 export default function App() {
   const [files, setFiles] = useState([]);
-  const BACKEND_URL = 'http://localhost:3003';
+  const BACKEND_URL = process.env.REACT_APP_API_URL;
 
   const pickWordFiles = async () => {
     try {
