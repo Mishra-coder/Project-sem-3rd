@@ -3,70 +3,79 @@
 **Developer**: Devendra Mishra  
 **Roll Number**: 2024-B-04012007
 
-## 📱 Overview
+---
 
-A professional, feature-rich mobile application for converting images to PDF with advanced editing capabilities. Built with React Native and Expo, this app provides a seamless offline experience with a premium UI.
+## 📱 About
 
-## 🚀 Try It Now
+A professional mobile application for converting images to PDF with advanced editing capabilities. Built with React Native and Expo for iOS and Android.
 
-### Option 1: Quick Test (Recommended)
-1. **Install Expo Go** on your phone:
-   - [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
-   - [iOS](https://apps.apple.com/app/expo-go/id982107779)
+## ✨ Features
 
-2. **Clone & Run:**
+### Image Management
+- Select multiple images from gallery
+- Reorder pages with drag controls
+- Batch conversion support
+
+### Image Editing
+- Rotate images (90° increments)
+- Apply filters (Black & White, Document mode)
+- Crop images using native editor
+
+### PDF Customization
+- Page size: A4, Letter, or Fit to Image
+- Orientation: Portrait or Landscape
+- Margins: None, Small, or Normal
+- Custom PDF naming
+
+### Additional Features
+- 100% offline - no internet required
+- Premium gradient UI
+- Fast on-device conversion
+- Share or save PDFs directly
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v14+)
+- npm or yarn
+- Expo Go app on your phone
+
+### Installation
+
+1. **Clone the repository**
    ```bash
    git clone https://github.com/Mishra-coder/Image_To_Pdf.git
    cd Image_To_Pdf/ImageToPdf/frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
    npm install
+   ```
+
+3. **Start the app**
+   ```bash
    npx expo start
    ```
 
-3. **Scan QR Code** with Expo Go app
+4. **Run on your device**
+   - Install [Expo Go](https://expo.dev/client) on your phone
+   - Scan the QR code with Expo Go (Android) or Camera (iOS)
 
-### Option 2: Direct Download
-Coming soon: APK download link for Android users
+---
 
-> **Note**: This is a React Native mobile app optimized for iOS and Android devices.
-
-## ✨ Key Features
-
-### 🖼️ Image Management
-- **Multi-Select**: Pick multiple images at once from your gallery
-- **Drag & Reorder**: Arrange pages in any order with up/down arrows
-- **Batch Processing**: Convert all images to PDF in one go
-
-### ✏️ Image Editing
-- **Rotate**: Rotate images 90 degrees
-- **Filters**: Apply Black & White or Document mode for better readability
-- **Crop**: Use native image editor for precise cropping
-
-### 📄 PDF Settings
-- **Page Size**: Choose between A4, Letter, or Fit to Image
-- **Orientation**: Portrait or Landscape mode
-- **Margins**: Customize spacing (None, Small, Normal)
-- **Custom Naming**: Name your PDF files before conversion
-
-### 🎨 Premium UI
-- Beautiful gradient header with modern design
-- Smooth animations and transitions
-- Intuitive card-based file management
-- Professional color scheme
-
-### 🔒 Privacy & Performance
-- **100% Offline**: No internet required, all processing on-device
-- **No Data Collection**: Files never leave your device
-- **Fast Conversion**: Instant image to PDF conversion
-- **Lightweight**: Optimized for performance
-
-## 🛠️ Technologies Used
+## 🛠️ Technologies
 
 - **Framework**: React Native with Expo SDK 54
-- **UI Components**: Custom gradient buttons with `expo-linear-gradient`
-- **Image Processing**: `expo-image-manipulator`, `expo-image-picker`
-- **PDF Generation**: `expo-print`
-- **File System**: `expo-file-system`
-- **Icons**: `@expo/vector-icons` (Material Icons)
+- **UI**: Custom components with Linear Gradients
+- **Image Processing**: expo-image-manipulator, expo-image-picker
+- **PDF Generation**: expo-print
+- **File System**: expo-file-system
+- **Icons**: Material Icons
+
+---
 
 ## 📁 Project Structure
 
@@ -75,111 +84,45 @@ ImageToPdf/
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── PremiumButton.js      # Reusable gradient button
-    │   │   ├── SettingsModal.js      # PDF settings configuration
-    │   │   └── EditImageModal.js     # Image editing interface
+    │   │   ├── PremiumButton.js
+    │   │   ├── SettingsModal.js
+    │   │   └── EditImageModal.js
     │   └── screens/
-    │       └── HomeScreen.js          # Main application screen
+    │       └── HomeScreen.js
     ├── App.js
     ├── app.json
     └── package.json
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- Expo CLI
-- Expo Go app (for testing on mobile)
+## � Usage
 
-### Installation
+1. **Select Images**: Tap "Select Images" to choose photos
+2. **Edit (Optional)**: Tap edit icon to rotate, filter, or crop
+3. **Reorder (Optional)**: Use arrows to arrange page order
+4. **Configure**: Tap settings to adjust PDF options
+5. **Name PDF**: Enter custom name in header (optional)
+6. **Convert**: Tap "Convert All Files" for batch processing
+7. **Share/Save**: Tap "Open" to share or save the PDF
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Project-sem-3rd/ImageToPdf/frontend
-   ```
+---
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+## 🎨 Key Highlights
 
-3. **Start the development server**
-   ```bash
-   npx expo start
-   ```
+- **Premium UI**: Modern gradient design with smooth animations
+- **Offline First**: All processing happens on your device
+- **Privacy Focused**: No data collection or cloud uploads
+- **Fast & Efficient**: Instant image to PDF conversion
+- **User Friendly**: Intuitive interface with visual feedback
 
-4. **Run on device**
-   - Scan the QR code with Expo Go (Android)
-   - Scan with Camera app (iOS)
-
-## 📦 Dependencies
-
-```json
-{
-  "@expo/vector-icons": "^15.0.3",
-  "expo": "~54.0.25",
-  "expo-document-picker": "~14.0.7",
-  "expo-file-system": "~19.0.19",
-  "expo-image-manipulator": "~14.0.7",
-  "expo-image-picker": "~17.0.8",
-  "expo-linear-gradient": "~14.0.1",
-  "expo-print": "~15.0.7",
-  "expo-sharing": "~14.0.7",
-  "react": "19.1.0",
-  "react-native": "0.81.5"
-}
-```
-
-## 🎯 Usage
-
-1. **Select Images**: Tap "Select Images" or "Select Files" to choose images
-2. **Edit (Optional)**: Tap the edit icon to rotate, filter, or crop images
-3. **Reorder (Optional)**: Use up/down arrows to arrange page order
-4. **Configure Settings**: Tap the settings icon to adjust PDF options
-5. **Name PDF (Optional)**: Enter a custom name in the header input
-6. **Convert**: Tap "Convert" for individual files or "Convert All Files" for batch
-7. **Share/Save**: Tap "Open" to share or save the converted PDF
-
-## 🎨 Features in Detail
-
-### Image Editing Modal
-- **Rotate**: Instantly rotate images by 90 degrees
-- **Filter Toggle**: Cycle through Normal → B&W → Document modes
-- **Crop**: Opens native image editor for precise cropping
-- **Live Preview**: See changes in real-time
-
-### Settings Modal
-- **Page Size Options**: A4 (210×297mm), Letter (8.5×11in), Fit to Image
-- **Orientation**: Portrait or Landscape
-- **Margin Control**: Fine-tune white space around images
-- **Persistent Settings**: Choices apply to all conversions
-
-### File Management
-- **Visual Thumbnails**: See image previews in the list
-- **Status Indicators**: Pending, Converting, Done, Error states
-- **Quick Actions**: Edit, Convert, Open, Delete buttons
-- **Smart Reordering**: Disabled arrows at list boundaries
-
-## 🔧 Development
-
-### Code Structure
-- **Modular Components**: Reusable UI components
-- **Clean Code**: No comments, optimized for readability
-- **Type Safety**: Proper prop validation
-- **Performance**: Optimized rendering with FlatList
-
-### Styling Approach
-- **Gradient Themes**: Consistent color schemes
-- **Responsive Design**: Works on all screen sizes
-- **Platform-Specific**: Adapts to iOS/Android differences
-- **Shadow & Elevation**: Proper depth perception
+---
 
 ## 📝 License
 
 This project is created for educational purposes as part of a semester project.
+
+---
 
 ## 👨‍💻 Developer
 
