@@ -1,8 +1,7 @@
 {
   "expo": {
-    "sdkVersion": "54.0.0",
-    "name": "WordToPdfConverterMain",
-    "slug": "WordToPdfConverterMain",
+    "name": "ImageToPdf",
+    "slug": "ImageToPdf",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
