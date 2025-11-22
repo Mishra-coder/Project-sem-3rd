@@ -7,19 +7,27 @@
 
 A professional, feature-rich mobile application for converting images to PDF with advanced editing capabilities. Built with React Native and Expo, this app provides a seamless offline experience with a premium UI.
 
-## 🚀 Live Demo
+## 🚀 Try It Now
 
-### Try it Now:
-- **📱 Mobile**: Install [Expo Go](https://expo.dev/client) and scan the QR code
-- **💻 Run Locally**: 
-  ```bash
-  git clone <your-repo-url>
-  cd ImageToPdf/frontend
-  npm install
-  npx expo start
-  ```
+### Option 1: Quick Test (Recommended)
+1. **Install Expo Go** on your phone:
+   - [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
+   - [iOS](https://apps.apple.com/app/expo-go/id982107779)
 
-> **Note**: This is a React Native mobile app. For the best experience, use Expo Go on your phone or run locally.
+2. **Clone & Run:**
+   ```bash
+   git clone https://github.com/Mishra-coder/Image_To_Pdf.git
+   cd Image_To_Pdf/ImageToPdf/frontend
+   npm install
+   npx expo start
+   ```
+
+3. **Scan QR Code** with Expo Go app
+
+### Option 2: Direct Download
+Coming soon: APK download link for Android users
+
+> **Note**: This is a React Native mobile app optimized for iOS and Android devices.
 
 ## ✨ Key Features
 
