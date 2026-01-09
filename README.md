@@ -1,8 +1,5 @@
 # Image to PDF Converter
 
-**Developer**: Devendra Mishra  
-**Roll Number**: 2024-B-04012007
-
 ---
 
 ## 📱 About
